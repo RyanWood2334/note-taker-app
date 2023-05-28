@@ -62,6 +62,35 @@ app.post("/api/notes", (req, res) => {
   });
 });
 
+//deletes a specific note by reading the db.json, isolating the id that is in the params, and then splice out the isolated index, and then re-writes the json
+app.delete("/api/notes/:id", (req, res) => {
+  fs.readFile("./db/db.json", "utf-8", (err, data) => {
+    if (err) {
+      return res.status(500).json({ msg: "couldnt read db!" });
+    } else {
+      const notes = JSON.parse(data);
+      const noteID = req.params.id;
+      const noteIndex = notes.findIndex((note) => note.id == noteID);
+      if (noteIndex !== -1) {
+        notes.splice(noteIndex, 1);
+        fs.writeFile("./db/db.json", JSON.stringify(notes, null, 4), (err) => {
+          if (err) {
+            return res.status(500).json({ msg: "couldnt write to db" });
+          } else {
+            return res.json({
+              msg: "note deleted!",
+            });
+          }
+        });
+      } else {
+        return res.status(404).json({
+          msg: "no such note!",
+        });
+      }
+    }
+  });
+});
+
 //needs to read after routes, so put at the bottom of page
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "./public/index.html"));
